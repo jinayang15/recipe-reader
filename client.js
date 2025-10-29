@@ -1,5 +1,6 @@
 const wsUri = "ws://localhost:2700";
 let websocket;
+const synth = window.speechSynthesis;
 
 let recording = false;
 const controlButton = document.getElementById("control");
@@ -27,6 +28,8 @@ function connectWebsocketClient() {
       console.log("LISTENING...");
     } else if ("text" in json) {
       console.log(`RESULT: ${json.text}`);
+      const utter = new SpeechSynthesisUtterance(json.text);
+      synth.speak(utter);
     }
   });
 
@@ -45,9 +48,9 @@ function connectWebsocketClient() {
       // brings live audio into the audio environment
       const source = audioContext.createMediaStreamSource(stream);
 
-      // TODO: record the input and check for quality 
+      // TODO: record the input and check for quality
       // const recording = new MediaRecorder(source);
-      
+
       // process audio for recognition
       await audioContext.audioWorklet.addModule("processor.js");
       const monoNode = new AudioWorkletNode(audioContext, "processor", {
