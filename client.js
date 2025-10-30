@@ -1,8 +1,14 @@
+// TODO: add functionality to "navigate" recipe with voice
+// TODO: read out groups of ingredients
+// TODO: ask how much of a certain ingredient is needed
+// NOTE: Should not record at the same time as TTS
+
 const wsUri = "ws://localhost:2700";
 const parserUri = "http://localhost:8000";
 let websocket;
-let phraseList = [];
 const synth = window.speechSynthesis;
+let listening = false;
+let speaking = false;
 
 let recording = false;
 const controlButton = document.getElementById("control");
@@ -19,6 +25,16 @@ function connectWebsocketClient() {
   // connecting to server
   websocket.addEventListener("open", () => {
     console.log("CONNECTED");
+    const phraseList = ["was there [unk]"];
+    if (phraseList) {
+      websocket.send(
+        JSON.stringify({
+          config: {
+            phrase_list: phraseList,
+          },
+        })
+      );
+    }
     starting();
   });
 
@@ -30,10 +46,14 @@ function connectWebsocketClient() {
   // receiving messages
   websocket.addEventListener("message", (e) => {
     const json = JSON.parse(e.data);
-    if ("partial" in json) {
+    if ("partial" in json && !listening) {
+      listening = true;
+      speaking = false;
       console.log("LISTENING...");
-    } else if ("text" in json) {
+    } else if ("text" in json && !speaking) {
       console.log(`RESULT: ${json.text}`);
+      listening = false;
+      speaking = true;
       const utter = new SpeechSynthesisUtterance(json.text);
       synth.speak(utter);
     }
@@ -125,6 +145,9 @@ async function sendRecipeLink() {
     console.error(error);
   }
 }
+
+// TODO: create phrase list based on recipe
+function createPhraseList() {}
 
 /**
  * 1. Microphone Access

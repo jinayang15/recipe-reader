@@ -2,16 +2,10 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from recipe_scrapers import scrape_me
-import requests
 
 
 class LinkBody(BaseModel):
     link: str
-
-
-class RecipeInfo(BaseModel):
-    title: str
-    instructions: str
 
 
 app = FastAPI()
@@ -36,7 +30,7 @@ async def root():
 async def parse(body: LinkBody):
     try:
         scraper = scrape_me(body.link)
-        return scraper.to_json()
-        # RecipeInfo(title=scraper.title(), instructions=scraper.instructions())
+        json = scraper.to_json()
+        return json
     except Exception as e:
         raise HTTPException(status_code=502, detail=str(e))
