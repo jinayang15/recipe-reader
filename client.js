@@ -1,11 +1,17 @@
 const wsUri = "ws://localhost:2700";
+const parserUri = "http://localhost:8000";
 let websocket;
+let phraseList = [];
 const synth = window.speechSynthesis;
 
 let recording = false;
 const controlButton = document.getElementById("control");
 controlButton.addEventListener("click", connectWebsocketClient);
 controlButton.addEventListener("click", toggleButton);
+
+const recipeLink = document.getElementById("recipe-link");
+const parseRecipeButton = document.getElementById("parse-recipe");
+parseRecipeButton.addEventListener("click", sendRecipeLink);
 
 function connectWebsocketClient() {
   websocket = new WebSocket(wsUri);
@@ -99,6 +105,24 @@ function toggleButton() {
     controlButton.addEventListener("click", closeCallback);
     controlButton.removeEventListener("click", toggleButton);
     controlButton.addEventListener("click", toggleButton);
+  }
+}
+
+async function sendRecipeLink() {
+  const link = { link: recipeLink.value };
+  try {
+    const response = await fetch(parserUri + "/parse", {
+      method: "POST",
+      mode: "cors",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(link),
+    });
+    const json = await response.json();
+    console.log(json);
+  } catch (error) {
+    console.error(error);
   }
 }
 
