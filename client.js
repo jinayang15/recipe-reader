@@ -1,14 +1,19 @@
+// Priority (highest to lowest)
+
+// TODO: create phrase list based on recipe
 // TODO: add functionality to "navigate" recipe with voice
+// TODO: migrate to TS
 // TODO: read out groups of ingredients
 // TODO: ask how much of a certain ingredient is needed
-// NOTE: Should not record at the same time as TTS
+// TODO: allow it to be interruptable instead of disabling listening while speaking
+import RecipeReader from "./RecipeReader.js";
 
-const wsUri = "ws://localhost:2700";
-const parserUri = "http://localhost:8000";
 let websocket;
 const synth = window.speechSynthesis;
+const wsUri = "ws://localhost:2700";
+const parserUri = "http://localhost:8000";
 let listening = false;
-let speaking = false;
+let recipeReader;
 
 let recording = false;
 const controlButton = document.getElementById("control");
@@ -25,7 +30,7 @@ function connectWebsocketClient() {
   // connecting to server
   websocket.addEventListener("open", () => {
     console.log("CONNECTED");
-    const phraseList = ["was there [unk]"];
+    const phraseList = recipeReader?.createPhraseList();
     if (phraseList) {
       websocket.send(
         JSON.stringify({
@@ -48,14 +53,11 @@ function connectWebsocketClient() {
     const json = JSON.parse(e.data);
     if ("partial" in json && !listening) {
       listening = true;
-      speaking = false;
       console.log("LISTENING...");
-    } else if ("text" in json && !speaking) {
-      console.log(`RESULT: ${json.text}`);
+    } else if ("text" in json && listening) {
+      console.log(`HEARD: ${json.text}`);
       listening = false;
-      speaking = true;
-      const utter = new SpeechSynthesisUtterance(json.text);
-      synth.speak(utter);
+      recipeReader.useCommand(json.text);
     }
   });
 
@@ -94,7 +96,7 @@ function connectWebsocketClient() {
           pcm16[i] = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
         }
 
-        if (websocket.readyState === WebSocket.OPEN) {
+        if (websocket.readyState === WebSocket.OPEN && !synth.speaking) {
           websocket.send(pcm16.buffer);
         }
       };
@@ -141,55 +143,10 @@ async function sendRecipeLink() {
     });
     const json = await response.json();
     console.log(json);
+    recipeReader = new RecipeReader(synth, json);
   } catch (error) {
     console.error(error);
   }
 }
 
-// TODO: create phrase list based on recipe
 function createPhraseList() {}
-
-/**
- * 1. Microphone Access
-
-    Request permission and capture live audio using navigator.mediaDevices.getUserMedia({ audio: true }).
-
-2. Audio Processing Setup
-
-    Create an AudioContext and connect the microphone stream to it with createMediaStreamSource(stream).
-
-Use an AudioWorklet to process audio in real time, block by block, on a separate thread.
-3. Audio Transformation
-
-    In the AudioWorkletProcessor:
-
-        Downmix stereo to mono if needed.
-
-        Resample to the server’s required sample rate (e.g., 16,000 Hz).
-
-        Convert Float32 samples to 16-bit signed PCM (Int16Array).
-
-Send processed audio chunks to the main thread using this.port.postMessage().
-4. WebSocket Streaming
-
-    In the main script, listen for messages from the AudioWorkletNode.
-
-    Send each audio chunk over the WebSocket using websocket.send(int16Array.buffer).
-
-5. Server Communication
-
-    Optionally, send a config message to the server to set sample rate and other options .
-
-    When finished, stop the microphone stream and send an end-of-audio message (e.g., {"eof": 1}).
-
-6. Handling Recognition Results
-
-    Listen for incoming WebSocket messages from the server.
-
-    Parse each message to distinguish between partial and final results (using fields like isFinal or IsPartial).
-
-    Display partial results for real-time feedback and final results for confirmed transcription.
-
-This workflow ensures your audio is captured, processed, and streamed in the format your server expects, and that you receive and handle recognition results in real time.
-
- */
