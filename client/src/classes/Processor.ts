@@ -1,8 +1,12 @@
-class Processor extends AudioWorkletProcessor {
+export default class Processor extends AudioWorkletProcessor {
   constructor() {
     super();
   }
-  process(inputs, outputs, parameters) {
+  process(
+    inputs: Float32Array[][],
+    outputs: Float32Array[][],
+    parameters: Record<string, Float32Array>
+  ): boolean {
     // grab first (and only) input
     const input = inputs[0];
     if (!input || input.length === 0) {

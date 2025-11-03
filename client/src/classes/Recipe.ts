@@ -5,6 +5,7 @@ interface IngredientGroup {
 
 export default interface Recipe {
   // kept snake_case since the parsed recipe has snake_case
+  // excluded nutrients
   author: string;
   canonical_url: string;
   category: string;
@@ -18,7 +19,6 @@ export default interface Recipe {
   instructions: string;
   instructions_list: Array<string>;
   language: string;
-  nutrients: any;
   prep_time: number;
   ratings: number;
   ratings_count: number;
