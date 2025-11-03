@@ -1,4 +1,4 @@
-import type Recipe from "./Recipe.ts";
+import type Recipe from "./Recipe.js";
 
 export default class RecipeReader {
   synth: SpeechSynthesis;
@@ -14,10 +14,10 @@ export default class RecipeReader {
     this.instructionsLength = this.instructionsList.length;
     this.commandsMap = new Map();
     console.log(this.instructionIdx, "constructor");
-    this.setCommands(recipe);
+    this.setCommands();
   }
 
-  private setCommands(recipe: Recipe) {
+  private setCommands() {
     this.commandsMap.set(
       "current instruction",
       this.currentInstruction.bind(this)
